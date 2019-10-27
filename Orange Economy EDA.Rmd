@@ -1,0 +1,255 @@
+---
+title: "Orange Economy"
+author: "Gerson Perdomo"
+date: "25/10/2019"
+output: html_document
+---
+
+## Knowing the dataset
+Orange economy means the contribution of the technology industries, startups or companies in countries.
+The dataset has been scrapped from the CIA world factbook (https://www.cia.gov/library/publications/the-world-factbook/),
+Unated Nations website (https://www.un.org/es/),
+the world bank (https://www.worldbank.org/)
+and news sites of each country.
+
+```{r}
+options(warn=-1)
+orangeec <- read.csv('./orangeec.csv') # Please remember to write your path
+```
+
+The countries in the dataset are 
+
+```{r}
+as.vector(orangeec[,1])
+```
+
+And the variables to be evaluated are
+
+```{r}
+colnames(orangeec)
+```
+
+# Statistic description
+```{r}
+summary(orangeec[,c(-1)])
+```
+
+* ##### **Gross Domestic Product per capita (GDP.PC):**
+Eight out of seventeen countries have a GDP per capita over the mean.
+
+* ##### **Gross Domestic Product in US Billion (GDP.US.BILL):**
+The mean seems to be high, but this result is due to the high GDP of Brazil and Mexico, which is logic, considering that they are big countries.
+
+* ##### **Gross Domestic Product Growth (GDP.Growth):**
+All countries had a GDP growth, the country with the highest growth was Panama.
+
+* ##### **Services contribution to GDP (Services...GDP):**
+All of the countries have a services contribuition greater than the 50 % of the GDP, based on the sector of origin.
+
+* ##### **Orange economy contribution (Creat.Ind...GDP):**
+Getting the value of this variable was hard. However most of the countries have the countribution of creative industries work on technology (Orange economy), Mexico is the country with the greates contribution.
+
+* ##### **Inflation of the country (Inflation):**
+Inflation only increased in the evaluated countries, but the country that had the least increase of inflation was Ecuador.
+
+* ##### **Unemployment:**
+The percentage of the population that hasn't find a job, Brazil had the highest unemployment.
+
+* ##### **Percentage of the population below the poverty line (X..pop.poverty.line):**
+Guatemala has the greatest amount of population below the poverty line, with a 59.3%.
+
+* ##### **Population with access to internet (Internet.penetration...population):**
+Argentine is the country with a the biggest percentage of population with access to internet.
+
+* ##### **Mean age of the population (Median.Age):**
+The country with the youngest population is Guatemala, this could be related to its percentage of population below the poverty line.
+
+* ##### **Percentage of the population between 25-54 years old (X..pop.25.54):**
+Costa Rica has the highest percentage of the population between 25 - 54 years old.
+
+* ##### **Education investment as percentage of the GDP (Education.invest...GDP):**
+Guatemala is the country that had the lowest education investment.
+
+## Starting EDA
+
+```{r , message=FALSE, warning=FALSE }
+library(dplyr)
+library(ggplot2)
+ggplot()+geom_histogram(data=orangeec,
+                        aes(x=GDP.PC), fill="#FFB414",color="#DA9500",
+                        binwidth= 2000)+
+  labs(x="Gross Domestic Product Per Capita", y="Amount of countries",
+       title="GDP per capita in LATAM Countries")+
+  theme(legend.position = 'none')+
+  theme(panel.background = element_blank(),panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+```
+
+Seven out of seventeen coutries have a Gross Domestic Product Per Capita equal to or lower than 10000$.
+
+```{r}
+ggplot()+geom_histogram(data=orangeec,
+                        aes(x=Creat.Ind...GDP), fill="#FFB777",color="#C35C00",
+                        binwidth= 1)+
+  labs(x="Contribution of orange economy to GDP (%)", y="Amount of countries",
+       title="Contribution of orange economy in LATAM countries")+
+  theme(legend.position = 'none')+
+  theme(panel.background = element_blank(),panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+```
+
+Most of countries have an orange economy contribution less than 5 percent of the GDP.
+
+```{r}
+ggplot()+geom_histogram(data=orangeec,
+                        aes(x=Internet.penetration...population), fill="#F7A568",color="#D28F00",
+                        binwidth= 5)+
+  scale_x_continuous(breaks = seq(40,95,5))+
+  labs(x="Percentage of population with internet (%)", y="Amount of countries",
+       title="Internet penetration in LATAM countries")+
+  theme(legend.position = 'none')+
+  theme(panel.background = element_blank(),panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+```
+
+All countries have a percentage of population with internet greater than 35%.
+
+```{r, message=FALSE, warning=FALSE}
+economy <- mean(orangeec$GDP.PC)
+orangeec <- orangeec %>% 
+  mutate (Economy.condition = ifelse(GDP.PC < economy,
+                                  "Under average GDP per capita",
+                                  "Over average GDP per capita"))
+ggplot(orangeec, aes(x=Economy.condition,y=Creat.Ind...GDP,
+                     fill=Economy.condition))+
+  geom_boxplot(alpha=0.4,fill = c("#FE9600","#2E53E8"))+
+  labs(x="Country GDP per capita condition",y="Countribution of Orange economy to GDP (%)",
+       title="Countribution of orange economy in countries under and over the mean GDP PC")+
+  theme(legend.position = 'none')+
+  theme(panel.background = element_blank(),panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+```
+
+Countries with a GDP percapita lower than the average tend to have less contribution of the Orange economy.
+
+```{r}
+ggplot(orangeec, aes(x=Economy.condition,y=Internet.penetration...population,
+                     fill=Economy.condition))+
+  geom_boxplot(alpha=0.4,fill = c("#FE9600","#2E53E8"))+
+  labs(x="GDP per capita country condition",y="Percentage of population with internet (%)",
+       title="Internet penetration in countries under and over the mean GDP PC")+
+  theme(legend.position = 'none')+
+  theme(panel.background = element_blank(),panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+
+```
+
+Countries with a GDP per capita lowera than the average tend to have a more sparse population with access to internet.
+
+```{r}
+ggplot(orangeec, aes(Internet.penetration...population,Creat.Ind...GDP))+
+  geom_point(aes(color=Economy.condition,size=GDP.Growth..))+
+  labs(x="Percentage of population with Internet (%)",y="Contribution of orange economy (%)",
+       title="Internet Penetration - Contribution Orange economy \nacording to GDP growth and if GDP is over or under the mean GDP")+scale_color_manual(values = c("#FDA915","#0045FE"))
+```
+
+Countries that have more population with access to internet tend to have more growth on their GDP.
+
+```{r}
+ggplot(orangeec, aes(Education.invest...GDP, Unemployment))+
+  geom_point(aes(color=Economy.condition,size=X..pop.below.poverty.line))+
+  labs(x="Education invest (%)",y="Unemployment (%)",
+       title="Education invest and unemployment ratio \naccording to country GDP per capita condition and population below poverty line")+scale_color_manual(values = c("#FDA915","#0045FE"))
+```
+
+There is not a exactly pattern that can be seen in this graphic, but something interesting that can be seen is that there is a country that has more than 10% of unemployment and the percentage of population below poverty line is less than 10 %, and that country is Brazil.
+
+```{r,message=FALSE, warning=FALSE}
+library(plotly)
+my_graph <- ggplot(orangeec,aes(Internet.penetration...population,Unemployment,label=as.character(orangeec[,1])))+
+  geom_point(aes(color=Economy.condition))+
+  labs(x="Percentage of population with internet (%)",y="Unemployment (%)",
+       title="Population with internet-Unemployment ratio")+scale_color_manual(values = c("#FDA915","#0045FE"))
+graphic <- ggplotly(my_graph)
+graphic
+```
+
+Countries that have a percentage of population with internet lower than 60 % also have a GDP per capita under the mean. Argentina is the country that have more population with internet.
+
+# Checking correlations
+```{r,message=FALSE, warning=FALSE}
+library(rmarkdown)
+paged_table(as.data.frame(cor(orangeec[,2:13], use="complete.obs")))
+```
+
+##### *GDP.PC is correlated to Services...GDP (0.64) and Median.age (0.59)*
+
+##### *Creat.ind...GDP is correlated to X..pop.below.poverty.line (0.70)*
+
+##### *Unemployment is correlated to X..pop.25.54 (0.54)*
+
+##### *X..pop.below.poverty.line is negatively correlated to Median.age (-0.59)*
+
+##### *Education.invest..GDP is correlated to X..pop.25.54 (0.53)*
+
+
+**Remembering that correlation does not mean causality.**
+
+### from Correlations to graphics 
+
+```{r,message=FALSE, warning=FALSE}
+library(egg)
+p1 <- qplot(Services...GDP,GDP.PC,data = orangeec) 
+p2 <- qplot(x = Median.age,y= GDP.PC,data = orangeec)
+p3 <- qplot(data = orangeec, x = Creat.Ind...GDP,y= X..pop.below.poverty.line)
+p4 <- qplot(data = orangeec, x = Unemployment,y= X..pop.25.54) 
+p5 <- qplot(data = orangeec, x = X..pop.below.poverty.line,y= Median.age) 
+p6 <- qplot(data = orangeec, x = Education.invest...GDP,y= X..pop.25.54) 
+ggarrange(p1,p2,p3,p4,p5,p6)
+```
+
+Here the scatter plots with the best correlations.
+
+# The main question
+## Where would be the best country to open a startup?
+```{r}
+dataset <- read.csv('./orangeec.csv') # Please remember to write your path
+
+Prospective <- matrix(0,nrow =1, ncol = 13)
+
+NAcountries <- c(2,3,9,10,11,13)
+
+for (i in 2:13) {
+  Prospective[i] = mean(dataset[,i],na.rm=TRUE)
+}
+
+colnames(Prospective) <- colnames(dataset)
+
+evaluating <- matrix(0,nrow = 13,ncol = 17)
+
+for (i in 2:13){
+  c <- dist(x=c(Prospective[i],dataset[,i]))
+  b <- as.matrix(c)
+  distance <- b[1,-1]
+  evaluating[i,] <- distance
+}
+
+evaluating <- as.data.frame(evaluating)
+
+colnames(evaluating) <- dataset[,1]
+
+evaluating <- evaluating[,-NAcountries]
+
+total_dist <- apply(evaluating[-c(1,3),],2,sum)
+Best_country <- which.min(total_dist)
+Best_country
+```
+To evaluate where would be the best country to open a startup, firstly means of all of the variables were calculated and then the means were used to be compared as distance with all countries. The country with the closest distance to the means was Colombia.The best country to open a startp would be Colombia.
+
+If you want to confirm the obtained results, please check the dataset orangeec.csv to also make opinions on your own.
+
+Thank for reading my analysis.
+
+
+
+
